@@ -6,9 +6,8 @@
 #define WIFI_NETWORK_SSID	"iPhone" // Network SSID
 #define WIFI_NETWORK_PASS	"Hammam20181" // Network Password
 #define ENABLE_CONFIG_WIFI	1 	// Enable if you want to program the ESP8266 to connect to a new WiFi network
-								// Network configuration on ESP8266 only needs to run once. The ESP8266 keeps memory and will automatically connect to programmed networks
-								// Only enable if connecting to a new network or updating network settings
-								// Disable after use							
+// Network configuration on ESP8266 only needs to run once. The ESP8266 keeps memory and will automatically connect to programmed networks
+// Only enable if connecting to a new network or updating network settings // Disable after use													
 /* Functions' Prototypes */
 void initUART(void); // UART configuration
 void initLED(void);  // LEDs Configuration 
