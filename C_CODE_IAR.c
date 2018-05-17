@@ -1,33 +1,35 @@
 #include <msp430.h>
 
 #define MAX_SEND_LENGTH     3  // 3 characters or 3 digits to send over WiFi
-#define BASE_URL_LDR            "GET /update?key=LNCH1PPNN4H39CJ7&field3="
-#define BASE_URL_TMP            "GET /update?key=LNCH1PPNN4H39CJ7&field1="
-#define WIFI_NETWORK_SSID	"iPhone" // Rowan_IOT network
-#define WIFI_NETWORK_PASS	"Hammam20181" // No password for this network
-#define ENABLE_CONFIG_WIFI	1 // Enable if you want to program the ESP8266 to connect to WiFi network
-// Network configuration on ESP8266 only needs to run once. The ESP8266 keeps memory and will automatically connect to programmed networks
-// Only enable if connecting to a new network or updating network settings
-// Disable after use
+#define BASE_URL_LDR            "GET /update?key=LNCH1PPNN4H39CJ7&field3="  // Used in WiFiSendMessage_LDR Function to send the Data of LDR to field 3 in ThingSpeak Channel
+#define BASE_URL_TMP            "GET /update?key=LNCH1PPNN4H39CJ7&field1="  // Used in WiFiSendMessage_TMP Function to send the Data of TMP to field 1 in ThingSpeak Channel
+#define WIFI_NETWORK_SSID	"iPhone" // Network SSID
+#define WIFI_NETWORK_PASS	"Hammam20181" // Network Password
+#define ENABLE_CONFIG_WIFI	1 	// Enable if you want to program the ESP8266 to connect to a new WiFi network
+								// Network configuration on ESP8266 only needs to run once. The ESP8266 keeps memory and will automatically connect to programmed networks
+								// Only enable if connecting to a new network or updating network settings
+								// Disable after use
 
-/* Function Prototypes */
-void initUART(void);
-void initLED(void);
-void initADC_LDR(void);
-void resetADC_LDR(void);
-void initADC_TMP(void);
-void resetADC_TMP(void);
-void initUploadTimer(void);
+								
+/* Functions' Prototypes */
 
-void putc(const unsigned c);
-void TX(const char *s);
-void crlf(void);
-void WifiConfigureNetwork(void);
-void WiFiSendMessage_LDR(int data);
-void WiFiSendMessage_TMP(int data);
-void WiFiSendLength(int data);
-void WiFiSendTCP();
-char singleDigitToChar(unsigned int digit);
+void initUART(void); // UART configuration
+void initLED(void);  // LEDs Configuration 
+void initADC_LDR(void); // ADC Configuration for LDR Sensor
+void resetADC_LDR(void); // Reset ADC Configuration to Defult
+void initADC_TMP(void); // ADC Configuration for TMP Sensor
+void resetADC_TMP(void); // Reset ADC Configuration to Defult
+void initUploadTimer(void); // Timer0_A0 Configuration 
+
+void putc(const unsigned c); // Output char to UART 
+void TX(const char *s); // Output string to UART
+void crlf(void); // CarriageReturn and LineFeed (Which ends the line and starts a new line - sends the message to ESP8266) 
+void WifiConfigureNetwork(void); // Wifi Network Configuration 
+void WiFiSendMessage_LDR(int data); // Send LDR data
+void WiFiSendMessage_TMP(int data); // Send TMP data
+void WiFiSendLength(int data); // Send the Length of the HTTP Request -- Defult 50 digit
+void WiFiSendTCP // Send TCP Request
+char singleDigitToChar(unsigned int digit); // Converts Single to chart to be sent by the Function putc(); 
 
 
 int LDR_Result ; 
@@ -43,6 +45,7 @@ int sensorReadingTMP = 0;
 int main(void)
 {
     WDTCTL = WDTPW + WDTHOLD;               // Stop WDT
+	
     if (CALBC1_1MHZ == 0xFF)                // If calibration constant erased
     {
         while(1);                           // do not load, trap CPU!!
@@ -58,39 +61,39 @@ int main(void)
 
     initUploadTimer();                      // Enable timer to upload at 2Hz frequency
     __bis_SR_register(LPM0_bits + GIE);     // Enter low power mode with interrupts enabled
-    // The UploadTimer will interrupt and start ADC sampling and WiFi uploading
+											// The UploadTimer will interrupt and start ADC sampling and WiFi uploading
 }
 
 // Initialize TimerB for sending WiFi timer
 void initUploadTimer(void)
 {
-    TA0CCTL0 = CCIE;
+    TA0CCTL0 = CCIE;						// Enable Timer Interrupt
     TA0CTL = TASSEL_2 + MC_1 + ID_3;        // SMCLK/8, UPMODE, Compare mode
     TA0CCR0 = 62500;                        // Timer period (125kHz/2Hz), slowest before overflow
 }
 
 void initADC_LDR(void)
 {
-    ADC10CTL0 =  ADC10ON + ADC10IE;   // ADC10ON, interrupt enabled
-    ADC10CTL1 = INCH_4;               // input A4
-    ADC10AE0 = BIT4;                 // PA.4 ADC option select
+    ADC10CTL0 =  ADC10ON + ADC10IE;   	// ADC10ON, interrupt enabled
+    ADC10CTL1 = INCH_4;                 // input A4
+    ADC10AE0 = BIT4;                    // PA.4 ADC option select
 }
 void resetADC_LDR(void)
 {
-    ADC10CTL0 &= ~ENC ; // ADC10CTL0 REGISTER CANNOT BE MODYFIED WHILE EMC IS ENABLED. 
+    ADC10CTL0 &= ~ENC ; // Disable Conversation - ADC10CTL0 REGISTER CANNOT BE MODYFIED WHILE EMC IS ENABLED. 
     ADC10CTL0 = 0 ;   
     ADC10CTL1 = 0 ;              
     ADC10AE0 =  0 ;                 
 }
 void initADC_TMP(void)
 {
-    ADC10CTL0 = SREF_0  + REFON + ADC10ON + ADC10IE;
-    ADC10CTL1 = INCH_7 ;         
-    ADC10AE0 = BIT7; // ADC Analog enable A4
+    ADC10CTL0 = ADC10ON + ADC10IE;  // ADC10ON, interrupt enabled
+    ADC10CTL1 = INCH_7 ;  			// input A7       
+    ADC10AE0 = BIT7; 				// ADC Analog enable A7 
 }
 void resetADC_TMP(void)
 {
-    ADC10CTL0 &= ~ENC ; // ADC10CTL0 REGISTER CANNOT BE MODYFIED WHILE EMC IS ENABLED. 
+    ADC10CTL0 &= ~ENC ; // Disable Conversation - ADC10CTL0 REGISTER CANNOT BE MODYFIED WHILE EMC IS ENABLED. 
     ADC10CTL0 = 0 ;   
     ADC10CTL1 = 0 ;              
     ADC10AE0 =  0 ;         
@@ -101,12 +104,12 @@ void resetADC_TMP(void)
 // This function needs to only run once. The ESP8266 will always connect to the network after being programmed.
 void WifiConfigureNetwork(void)
 {
-	TX("AT+RST");				// Reset the board
-	crlf();						// CR LF
+	TX("AT+RST");				// Reset the ESP8266
+	crlf();						// CR LF 
 	__delay_cycles(2000000);	// Delay
 	TX("AT+CWMODE_DEF=1");	    // Set mode to client (save to flash)
-	// Modem-sleep mode is the default sleep mode for CWMODE = 1
-	// ESP8266 will automatically sleep and go into "low-power" (15mA average) when idle
+								// Modem-sleep mode is the default sleep mode for CWMODE = 1
+								// ESP8266 will automatically sleep and go into "low-power" (15mA average) when idle
 	crlf();						// CR LF
 	__delay_cycles(2000000);	// Delay
 	TX("AT+CWJAP_DEF=\"");      // Assign network settings (save to flash)
@@ -122,7 +125,7 @@ void WifiConfigureNetwork(void)
 // Transmits the TCP request
 void WiFiSendTCP()
 {
-    // TCP Request to ThingSpeak  
+    // TCP Request to ThingSpeak  AT+CIPSTART="TCP","api.thingspeak.com",80 
     TX("AT+CIPSTART=");
     while (!(IFG2&UCA0TXIFG)); UCA0TXBUF = '"';                  // Transmit a byte 
     TX("TCP");
@@ -158,7 +161,7 @@ char singleDigitToChar(unsigned int digit)
 
 // The ESP8266 requires that the message request length be known to the processor before the request is sent. This tells the ESP8266 when the stop searching for data to transmit
 // Function calculates the length of the message to be sent and transmits to ESP8266
-void WiFiSendLength(int data) // Input the ADC distance reading
+void WiFiSendLength(int data) // Input the ADC Reading // Set as 50 digits
 {
     TX("AT+CIPSEND=50"); // The start of the command, the next parameter is the length
     crlf();
@@ -167,6 +170,7 @@ void WiFiSendLength(int data) // Input the ADC distance reading
 void WiFiSendMessage_LDR(int data) // Input the ADC distance reading
 {
     TX(BASE_URL_LDR); // Send the beginning part of the request
+	
     // Split the data integer into separate characters
     unsigned int i;
     unsigned int reverseIndex = MAX_SEND_LENGTH - 1;
@@ -266,7 +270,7 @@ __interrupt void Timer0_A0 (void)
         sensorReadingLDR = ADC10MEM ;
         //__bis_SR_register(CPUOFF + GIE);    // LPM0, ADC10_ISR will force exit
         TMP_Result = sensorReadingTMP; 
-          TMP = TMP_Result / 5.27 ;
+          TMP = ( TMP_Result / 1024 ) * 300 ;
 
         P1OUT |= BIT6; // Toggle output LED
         WiFiSendTCP();
