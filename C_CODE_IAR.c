@@ -8,11 +8,8 @@
 #define ENABLE_CONFIG_WIFI	1 	// Enable if you want to program the ESP8266 to connect to a new WiFi network
 								// Network configuration on ESP8266 only needs to run once. The ESP8266 keeps memory and will automatically connect to programmed networks
 								// Only enable if connecting to a new network or updating network settings
-								// Disable after use
-
-								
+								// Disable after use							
 /* Functions' Prototypes */
-
 void initUART(void); // UART configuration
 void initLED(void);  // LEDs Configuration 
 void initADC_LDR(void); // ADC Configuration for LDR Sensor
@@ -20,7 +17,6 @@ void resetADC_LDR(void); // Reset ADC Configuration to Defult
 void initADC_TMP(void); // ADC Configuration for TMP Sensor
 void resetADC_TMP(void); // Reset ADC Configuration to Defult
 void initUploadTimer(void); // Timer0_A0 Configuration 
-
 void putc(const unsigned c); // Output char to UART 
 void TX(const char *s); // Output string to UART
 void crlf(void); // CarriageReturn and LineFeed (Which ends the line and starts a new line - sends the message to ESP8266) 
@@ -30,38 +26,28 @@ void WiFiSendMessage_TMP(int data); // Send TMP data
 void WiFiSendLength(int data); // Send the Length of the HTTP Request -- Defult 50 digit
 void WiFiSendTCP // Send TCP Request
 char singleDigitToChar(unsigned int digit); // Converts Single to chart to be sent by the Function putc(); 
-
-
+// Integers
 int LDR_Result ; 
 int LDR ; 
 int TMP_Result; 
 int TMP; 
-
-
 int sensorReadingLDR = 0;
 int sensorReadingTMP = 0;
-
-
+// Main Function 
 int main(void)
 {
     WDTCTL = WDTPW + WDTHOLD;               // Stop WDT
-	
     if (CALBC1_1MHZ == 0xFF)                // If calibration constant erased
     {
         while(1);                           // do not load, trap CPU!!
     }
-
     initUART();
     initLED();
-  
    #if defined(ENABLE_CONFIG_WIFI)
         WifiConfigureNetwork(); 			// Configure the ESP8266 WiFi settings
    #endif
-      
-
     initUploadTimer();                      // Enable timer to upload at 2Hz frequency
-    __bis_SR_register(LPM0_bits + GIE);     // Enter low power mode with interrupts enabled
-											// The UploadTimer will interrupt and start ADC sampling and WiFi uploading
+    __bis_SR_register(LPM0_bits + GIE);     // Enter low power mode with interrupts enabled											// The UploadTimer will interrupt and start ADC sampling and WiFi uploading
 }
 
 // Initialize TimerB for sending WiFi timer
@@ -71,7 +57,6 @@ void initUploadTimer(void)
     TA0CTL = TASSEL_2 + MC_1 + ID_3;        // SMCLK/8, UPMODE, Compare mode
     TA0CCR0 = 62500;                        // Timer period (125kHz/2Hz), slowest before overflow
 }
-
 void initADC_LDR(void)
 {
     ADC10CTL0 =  ADC10ON + ADC10IE;   	// ADC10ON, interrupt enabled
@@ -81,9 +66,7 @@ void initADC_LDR(void)
 void resetADC_LDR(void)
 {
     ADC10CTL0 &= ~ENC ; // Disable Conversation - ADC10CTL0 REGISTER CANNOT BE MODYFIED WHILE EMC IS ENABLED. 
-    ADC10CTL0 = 0 ;   
-    ADC10CTL1 = 0 ;              
-    ADC10AE0 =  0 ;                 
+    ADC10CTL0 = 0 ;   ADC10CTL1 = 0 ; ADC10AE0 =  0 ;          
 }
 void initADC_TMP(void)
 {
@@ -94,12 +77,8 @@ void initADC_TMP(void)
 void resetADC_TMP(void)
 {
     ADC10CTL0 &= ~ENC ; // Disable Conversation - ADC10CTL0 REGISTER CANNOT BE MODYFIED WHILE EMC IS ENABLED. 
-    ADC10CTL0 = 0 ;   
-    ADC10CTL1 = 0 ;              
-    ADC10AE0 =  0 ;         
+    ADC10CTL0 = 0 ;   ADC10CTL1 = 0 ; ADC10AE0 =  0 ;   
 }
-
-
 // Configure the ESP8266 for the current WiFi network
 // This function needs to only run once. The ESP8266 will always connect to the network after being programmed.
 void WifiConfigureNetwork(void)
@@ -120,8 +99,6 @@ void WifiConfigureNetwork(void)
 	crlf();
 	__delay_cycles(5000000); 	// Delay, wait for ESP8266 to fetch IP and connect
 }
-
-
 // Transmits the TCP request
 void WiFiSendTCP()
 {
@@ -137,7 +114,6 @@ void WiFiSendTCP()
     TX(",");
     TX("80");
     crlf();
-    //
 }
 
 // Converts a single digit to its corresponding character
@@ -145,18 +121,10 @@ char singleDigitToChar(unsigned int digit)
 {
     char returnDigit = '0';
     if(digit == 0) returnDigit = '0';
-    else if(digit == 1) returnDigit = '1';
-    else if(digit == 2) returnDigit = '2';
-    else if(digit == 3) returnDigit = '3';
-    else if(digit == 4) returnDigit = '4';
-    else if(digit == 5) returnDigit = '5';
-    else if(digit == 6) returnDigit = '6';
-    else if(digit == 7) returnDigit = '7';
-    else if(digit == 8) returnDigit = '8';
-    else if(digit == 9) returnDigit = '9';
-    else returnDigit = '0';
-    return returnDigit;
-  
+    else if(digit == 1) returnDigit = '1';  else if(digit == 2) returnDigit = '2'; else if(digit == 3) returnDigit = '3';
+    else if(digit == 4) returnDigit = '4';  else if(digit == 5) returnDigit = '5'; else if(digit == 6) returnDigit = '6';
+    else if(digit == 7) returnDigit = '7';  else if(digit == 8) returnDigit = '8'; else if(digit == 9) returnDigit = '9';
+    else returnDigit = '0'; return returnDigit;
 }
 
 // The ESP8266 requires that the message request length be known to the processor before the request is sent. This tells the ESP8266 when the stop searching for data to transmit
@@ -166,11 +134,9 @@ void WiFiSendLength(int data) // Input the ADC Reading // Set as 50 digits
     TX("AT+CIPSEND=50"); // The start of the command, the next parameter is the length
     crlf();
 }
-
 void WiFiSendMessage_LDR(int data) // Input the ADC distance reading
 {
     TX(BASE_URL_LDR); // Send the beginning part of the request
-	
     // Split the data integer into separate characters
     unsigned int i;
     unsigned int reverseIndex = MAX_SEND_LENGTH - 1;
@@ -184,12 +150,10 @@ void WiFiSendMessage_LDR(int data) // Input the ADC distance reading
         reverseIndex--;
         data /= 10;
     }
-
     for(i = 0; i < MAX_SEND_LENGTH; i++)
     {
         if(reverseBuffer[i] != 0) putc(reverseBuffer[i]); // If initialized indice, transmit each individual character
     }
-
     crlf(); 
 }
 void WiFiSendMessage_TMP(int data) // Input the ADC distance reading
@@ -207,31 +171,23 @@ void WiFiSendMessage_TMP(int data) // Input the ADC distance reading
         reverseIndex--;
         data /= 10;
     }
-
     for(i = 0; i < MAX_SEND_LENGTH; i++)
     {
         if(reverseBuffer[i] != 0) putc(reverseBuffer[i]); // If initialized indice, transmit each individual character
     }
-
     crlf(); 
 }
-
 // ADC10 interrupt service routine
-
 #pragma vector=ADC10_VECTOR
 __interrupt void ADC10_ISR(void)
 {
-   
     __bic_SR_register_on_exit(CPUOFF);
-    
 }
-
 // Timer A0 interrupt service routine (UploadTimer)
 #pragma vector=TIMER0_A0_VECTOR
 __interrupt void Timer0_A0 (void)
 {
         P1OUT &= ~BIT6; P2OUT &= ~BIT2; // LEDS OFF 
-        
         initADC_LDR(); 
         __delay_cycles(1000000); 
         ADC10CTL0 |= ENC + ADC10SC;         // Sampling and conversion start
@@ -244,7 +200,6 @@ __interrupt void Timer0_A0 (void)
         else if ( LDR_Result > 250 && LDR_Result < 450 ) { LDR = 3 ; } 
         else if ( LDR_Result > 450 && LDR_Result < 650 ) { LDR = 2 ; } 
         else if ( 650 < LDR_Result ) { LDR = 1 ;} 
-        
         // Send LDR level to Thingspeak server 
         P2OUT |= BIT2; //  LED ON
         WiFiSendTCP();
@@ -257,12 +212,10 @@ __interrupt void Timer0_A0 (void)
         P2OUT |= BIT2; // Enable output LED
         __delay_cycles(500000); // 0.5s delay
         sensorReadingLDR = 0 ; LDR_Result = 0 ; LDR = 0 ; 
+	
         // Second Sensor configuration 
-        
         P2OUT &= ~BIT2; 
-        
         __delay_cycles(3000000); // 2 s delay
-        
         resetADC_LDR(); 
         initADC_TMP(); // Set ADC configs for the TMP sensor.
         __delay_cycles(1000000);
@@ -271,7 +224,6 @@ __interrupt void Timer0_A0 (void)
         //__bis_SR_register(CPUOFF + GIE);    // LPM0, ADC10_ISR will force exit
         TMP_Result = sensorReadingTMP; 
           TMP = ( TMP_Result / 1024 ) * 300 ;
-
         P1OUT |= BIT6; // Toggle output LED
         WiFiSendTCP();
         __delay_cycles(500000); // 0.5s delay
@@ -286,8 +238,6 @@ __interrupt void Timer0_A0 (void)
         __delay_cycles(3000000); // 2 s delay
         sensorReadingTMP = 0 ; TMP_Result = 0 ; TMP = 0 ;  
 }
-
-
 // Initialize LED on P1.0 (indicator LED)
 void initLED(void)
 {
@@ -296,26 +246,22 @@ void initLED(void)
     P1DIR |= BIT6; // Set P1.0 to the output direction
     P1OUT |= BIT6; // Enable the LED
 }
-
 // Output char to UART
 void putc(const unsigned c)
 {
     while (!(IFG2&UCA0TXIFG)); // USCI_A0 TX buffer ready?
     UCA0TXBUF = c;
 }
-
 // Output string to UART
 void TX(const char *s)
 {
     while(*s) putc(*s++);
 }
-
 // CR LF
 void crlf(void)
 {
     TX("\r\n");
 }
-
 void initUART(void)
 {
     DCOCTL = 0;                               // Select lowest DCOx and MODx settings
@@ -333,4 +279,3 @@ void initUART(void)
     UCA0MCTL = UCBRS2 + UCBRS0;               // Modulation UCBRSx = 5
     UCA0CTL1 &= ~UCSWRST;                     // **Initialize USCI state machine**
 }
-
